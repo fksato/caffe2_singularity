@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
+From: nvidia/cuda:10.1-cudnn7-devel-ubuntu16.04
 
 %labels
     AUTHOR FKS
