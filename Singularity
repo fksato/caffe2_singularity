@@ -96,12 +96,12 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     ########################
     ####### ffmpeg #########
     ########################
-    sudo apt install -y ffmpeg
+    apt install -y ffmpeg
 
     ########################
     ####### OpenCV #########
     ########################
-    sudo apt-get install -y libopencv-dev python3-opencv
+    apt-get install -y libopencv-dev python3-opencv
     
 
     echo "export PATH=/usr/local/bin:$PATH" >> $SINGULARITY_ENVIRONMENT
