@@ -93,16 +93,55 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     apt-get clean
     apt-get autoremove
 
+    #### OpenCV binaries ###
+    # needed for c headers #
     ########################
-    ####### ffmpeg #########
-    ########################
-    sudo apt install -y ffmpeg
+    mkdir -p $TMPDIR/opencv
+    cd $TMPDIR/opencv
+    wget https://github.com/opencv/opencv/archive/4.1.1.zip -O opencv-4.1.1.zip
+    unzip opencv-4.1.1.zip
+    cd  opencv-4.1.1
+    mkdir build && cd build
 
-    ########################
-    ####### OpenCV #########
-    ########################
-    sudo apt-get install -y libopencv-dev python3-opencv
-    
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_INSTALL_PREFIX=/usr/local \
+        -D PYTHON_EXECUTABLE=/usr/local/main_env/bin/python3.6 \
+        -D BUILD_EXAMPLES=ON \
+        -D BUILD_SHARED_LIBS=ON ..
+    make -j8
+    make install
+    ldconfig
+
+    ln -s /usr/local/lib/python3.6/site-packages/cv2 /usr/local/main_env/lib/python3.6/site-packages
+
+    ## nasm, ffmpeg
+    mkdir -p $TMPDIR/nasm $TMPDIR/ffmpeg_src
+
+    cd $TMPDIR/nasm && \
+    wget https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/nasm-2.13.03.tar.bz2 && \
+    tar xjvf nasm-2.13.03.tar.bz2 && \
+    cd nasm-2.13.03 && \
+    ./autogen.sh && \
+    PATH="/usr/local/bin:$PATH" ./configure --prefix="/usr/local/ffmpeg_build" --bindir="/usr/local/bin" && \
+    make && make install
+
+    cd $TMPDIR/ffmpeg_src && \
+    wget -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
+    tar xjvf ffmpeg-snapshot.tar.bz2 && \
+    cd ffmpeg && \
+    PATH="/usr/local/bin:$PATH" PKG_CONFIG_PATH="/usr/local/ffmpeg_build/lib/pkgconfig" ./configure \
+      --prefix="/usr/local/ffmpeg_build" \
+      --pkg-config-flags="--static" \
+      --extra-cflags="-I/usr/local/ffmpeg_build/include" \
+      --extra-ldflags="-L/usr/local/ffmpeg_build/lib" \
+      --extra-libs="-lpthread -lm" \
+      --bindir="/usr/local/bin" \
+      --enable-gpl \
+      --enable-libvorbis \
+      --enable-libx264 \
+      --enable-nonfree     
+    make -j8
+    make install
 
     echo "export PATH=/usr/local/bin:$PATH" >> $SINGULARITY_ENVIRONMENT
     echo "export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> $SINGULARITY_ENVIRONMENT
