@@ -54,7 +54,9 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     echo 'export LD_LIBRARY_PATH="/usr/local/cuda/lib64:$LD_LIBRARY_PATH"' >> $SINGULARITY_ENVIRONMENT
     echo 'export CUDA_HOME="/usr/local/cuda"' >> $SINGULARITY_ENVIRONMENT
 
-    ## OpenMPI
+    ########################
+    ####### OpemMPI ########
+    ########################
     echo "Installing Open MPI"
     export OMPI_DIR=/opt/ompi
     export OMPI_VERSION=3.1.0
@@ -75,7 +77,9 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     apt-get clean
     apt-get autoremove
 
-    ## Python3.6, venv, numpy
+    ########################
+    ####### Python #########
+    ########################
     apt-get install -y yasm libx264-dev
     apt-get install -y software-properties-common
     add-apt-repository ppa:deadsnakes/ppa
@@ -100,8 +104,25 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
 
     ########################
     ####### OpenCV #########
+    # needed for c headers #
     ########################
-    apt-get install -y libopencv-dev python3-opencv
+    mkdir -p $TMPDIR/opencv
+    cd $TMPDIR/opencv
+    wget https://github.com/opencv/opencv/archive/4.1.1.zip -O opencv-4.1.1.zip
+    unzip opencv-4.1.1.zip
+    cd  opencv-4.1.1
+    mkdir build && cd build
+
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_INSTALL_PREFIX=/usr/local \
+        -D PYTHON_EXECUTABLE=/usr/local/main_env/bin/python3.6 \
+        -D BUILD_EXAMPLES=ON \
+        -D BUILD_SHARED_LIBS=ON ..
+    make -j8
+    make install
+    ldconfig
+
+    ln -s /usr/local/lib/python3.6/site-packages/cv2 /usr/local/main_env/lib/python3.6/site-packages
     
 
     echo "export PATH=/usr/local/bin:$PATH" >> $SINGULARITY_ENVIRONMENT
@@ -110,7 +131,9 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     hash -r 
     ldconfig
 
-    ## Caffe2 Deps
+    ########################
+    ####### Caffe2 #########
+    ########################
     apt-get install -y \
       libgoogle-glog-dev \
       libgtest-dev \
@@ -138,7 +161,9 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     rm -r $TMPDIR/*
     TORCH_CUDA_ARCH_LIST="5.2;6.0;6.1;7.0" USE_OPENCV=1 USE_FFMPEG=1 USE_LMDB=1 python setup.py install
 
-    ## Python 3.6.9 compatible VMZ ##
+    ########################
+    ######### VMZ ##########
+    ########################
     cd /usr/local
     git clone https://github.com/fksato/VMZ.git
 
