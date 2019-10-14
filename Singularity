@@ -186,7 +186,7 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     pip install lmdb flask future graphviz hypothesis jupyter matplotlib protobuf pydot python-nvd3 pyyaml \
         requests scikit-image scipy six tornado pandas scikit-learn h5py
 
-    pip install git+https://github.com/brain-score/brainio_base
+    # pip install git+https://github.com/brain-score/brainio_base
     
     cd /usr/local
     git clone --recursive https://github.com/pytorch/pytorch.git
