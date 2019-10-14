@@ -53,6 +53,8 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     echo 'export PATH="/usr/local/cuda/bin:$PATH"' >> $SINGULARITY_ENVIRONMENT
     echo 'export LD_LIBRARY_PATH="/usr/local/cuda/lib64:$LD_LIBRARY_PATH"' >> $SINGULARITY_ENVIRONMENT
     echo 'export CUDA_HOME="/usr/local/cuda"' >> $SINGULARITY_ENVIRONMENT
+    #CUDA device order
+    echo 'export CUDA_DEVICE_ORDER=PCI_BUS_ID' >> $SINGULARITY_ENVIRONMENT
 
     ########################
     ####### OpemMPI ########
@@ -100,7 +102,39 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     ########################
     ####### ffmpeg #########
     ########################
-    apt install -y ffmpeg
+    mkdir -p $TMPDIR/nasm $TMPDIR/ffmpeg_src
+
+    cd $TMPDIR/nasm && \
+    wget https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/nasm-2.13.03.tar.bz2 && \
+    tar xjvf nasm-2.13.03.tar.bz2 && \
+    cd nasm-2.13.03 && \
+    ./autogen.sh && \
+    PATH="/usr/local/bin:$PATH" ./configure --prefix="/usr/local/ffmpeg_build" --bindir="/usr/local/bin" && \
+    make && make install
+
+    cd $TMPDIR/ffmpeg_src && \
+    wget -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
+    tar xjvf ffmpeg-snapshot.tar.bz2 && \
+    cd ffmpeg && \
+    PATH="/usr/local/bin:$PATH" PKG_CONFIG_PATH="/usr/local/ffmpeg_build/lib/pkgconfig" ./configure \
+      --prefix="/usr/local/ffmpeg_build" \
+      --pkg-config-flags="--static" \
+      --extra-cflags="-I/usr/local/ffmpeg_build/include" \
+      --extra-ldflags="-L/usr/local/ffmpeg_build/lib" \
+      --extra-libs="-lpthread -lm" \
+      --bindir="/usr/local/bin" \
+      --enable-gpl \
+      --enable-libvorbis \
+      --enable-libx264 \
+      --enable-nonfree     
+    make -j8
+    make install
+
+    echo "export PATH=/usr/local/bin:$PATH" >> $SINGULARITY_ENVIRONMENT
+    echo "export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> $SINGULARITY_ENVIRONMENT
+    echo "export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $SINGULARITY_ENVIRONMENT
+    hash -r 
+    ldconfig
 
     ########################
     ####### OpenCV #########
@@ -164,8 +198,7 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     ########################
     ######### VMZ ##########
     ########################
-    cd /usr/local
-    git clone https://github.com/fksato/VMZ.git
+    # pip install "VMZ @ git+https://github.com/fksato/VMZ"
 
     # Default mount paths
     mkdir /scratch /data /shared /fastdata
@@ -179,9 +212,6 @@ From: nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
     export SINGULAIRTYENV_APPEND_LD_LIBRARY_PATH=$OMPI_DIR/lib
 
     export PYTHONPATH=/usr/local/pytorch/build:/usr/local/VMZ/lib
-    #Add nvidia driver paths to the environment variables (if GPU required)
-    # export PATH="/nvbin:$PATH"
-    # export LD_LIBRARY_PATH="/nvlib:$LD_LIBRARY_PATH"
 
 %runscript
     #Runs inside the image every time it starts up
